@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf %}
+{% block content %}
+<div class="card-head"><h1 class="mt0" style="margin:0">AI 도우미 설정</h1><span class="muted">오늘 질문 {{ usage }}건 · <a href="{{ url_for('admin.ai_logs') }}">전체 질문 기록</a></span></div>
+<form method="post">{{ csrf() }}
+<div class="grid g2">
+  <div class="card">
+    <h3>사용 설정</h3>
+    <label class="check mb"><input type="checkbox" name="ai_enabled" value="1" {{ 'checked' if s.ai_enabled=='1' }}> <span><strong>AI 도우미 켜기</strong><br><span class="muted small">학생 화면에 질문 버튼, 퀴즈·제출 오답 시 ‘AI에게 묻기’ 버튼이 나타납니다.</span></span></label>
+    <div class="field"><label>사용할 AI</label>
+      {% for key, label in providers.items() %}
+      <label class="check"><input type="radio" name="ai_provider" value="{{ key }}" {{ 'checked' if s.ai_provider==key }}> {{ label }} {% if keys[key] %}<span class="badge st-AC">키 등록됨</span>{% else %}<span class="badge st-PENDING">키 없음</span>{% endif %}</label>
+      {% endfor %}
+    </div>
+    <div class="form-row">
+      <div class="field"><label>학생 1인 하루 질문 수 (0=무제한)</label><input type="number" name="ai_daily_limit" value="{{ s.ai_daily_limit }}" min="0"></div>
+      <div class="field"><label>답변 최대 길이(토큰)</label><input type="number" name="ai_max_tokens" value="{{ s.ai_max_tokens }}" min="200" max="4000"></div>
+    </div>
+    <label class="check mb"><input type="checkbox" name="ai_allow_code" value="1" {{ 'checked' if s.ai_allow_code=='1' }}> <span>정답 코드 제공 허용 <span class="muted small">(끄면 힌트와 오류 설명만 제공)</span></span></label>
+    <div class="field"><label>교사 추가 지침 (선택)</label><textarea class="prose" name="ai_extra_prompt" rows="3" placeholder="예: 반복문 단원에서는 while 대신 for 사용을 권장해 주세요.">{{ s.ai_extra_prompt }}</textarea></div>
+  </div>
+  <div class="card">
+    <h3>API 키와 모델</h3>
+    <p class="muted small">API 키는 암호화되어 저장되며, 화면에는 일부만 표시됩니다. 비워 두면 기존 키를 유지합니다. 모델 이름은 각 회사에서 제공하는 최신 모델명으로 바꿔 쓸 수 있습니다.</p>
+    {% for key, label in providers.items() %}
+    <div class="row-editor">
+      <div class="head"><strong>{{ label }}</strong>{% if keys[key] %}<span class="muted small">{{ keys[key] }}</span>{% endif %}</div>
+      <div class="form-row">
+        <div class="field"><label class="small">모델</label><input type="text" name="ai_model_{{ key }}" value="{{ models[key] }}"></div>
+        <div class="field"><label class="small">API 키</label><input type="password" name="ai_key_{{ key }}" placeholder="{{ '새 키로 바꾸려면 입력' if keys[key] else 'API 키 입력' }}" autocomplete="off"></div>
+      </div>
+      {% if keys[key] %}<button class="btn sm danger" name="action" value="clear_key" formnovalidate onclick="this.form.provider.value='{{ key }}'" data-confirm="{{ label }} 키를 삭제할까요?">키 삭제</button>{% endif %}
+    </div>
+    {% endfor %}
+    <input type="hidden" name="provider" value="">
+    <p class="small muted">키 발급: Gemini는 Google AI Studio, Claude는 Anthropic Console, GPT는 OpenAI Platform에서 발급합니다.</p>
+  </div>
+</div>
+<div class="btn-row mb"><button class="btn primary" name="action" value="save">저장</button><button class="btn" type="button" id="btn-test">연결 테스트 (저장된 설정 기준)</button></div>
+</form>
+<div id="test-result"></div>
+<div class="card">
+  <h3>최근 질문</h3>
+  {% include "admin/_ai_log_table.html" %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('btn-test').onclick = async () => {
+  const box = document.getElementById('test-result');
+  box.innerHTML = '<div class="flash info">AI 서버에 요청 중…</div>';
+  const r = await api('{{ url_for("admin.ai_test") }}', {});
+  box.innerHTML = r.ok ? `<div class="flash success"><strong>${esc(r.provider)} (${esc(r.model)}) 연결 성공</strong><br>${esc(r.answer)}</div>`
+    : `<div class="flash error">연결 실패: ${esc(r.error)}</div>`;
+};
+</script>
+{% endblock %}

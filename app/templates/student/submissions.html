@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge, pager %}
+{% block content %}
+<h1>내 제출 기록</h1>
+<div class="card table-wrap">
+{% if pg.items %}
+<table>
+  <tr><th>번호</th><th>문제</th><th>결과</th><th>통과</th><th>최대 실행 시간</th><th>제출 시각</th></tr>
+  {% for s in pg.items %}
+  <tr><td><a href="{{ url_for('student.submission_detail', sid=s.id) }}">#{{ s.id }}</a></td>
+    <td><a href="{{ url_for('student.problem', number=s.problem.number) }}">{{ s.problem.number }}. {{ s.problem.title }}</a></td>
+    <td>{{ status_badge(s.status) }}</td><td>{{ s.passed }}/{{ s.total }}</td>
+    <td>{{ '%.3f'|format(s.max_time or 0) }}초</td><td class="muted small">{{ s.created_at|dt }}</td></tr>
+  {% endfor %}
+</table>
+{{ pager(pg, 'student.my_submissions') }}
+{% else %}<div class="empty">제출 기록이 없습니다.</div>{% endif %}
+</div>
+{% endblock %}

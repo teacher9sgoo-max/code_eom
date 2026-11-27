@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge, pager %}
+{% block content %}
+<h1>제출 기록</h1>
+<div class="card">
+  <form method="get" class="filters">
+    <input type="search" name="student" value="{{ student }}" placeholder="학번 또는 이름">
+    <input type="number" name="problem" value="{{ problem }}" placeholder="문제 번호" style="width:130px">
+    <select name="status"><option value="">전체 결과</option>{% for k, v in STATUS_LABELS.items() %}<option value="{{ k }}" {{ 'selected' if status==k }}>{{ v }}</option>{% endfor %}</select>
+    <button class="btn">조회</button><a class="btn ghost" href="{{ url_for('admin.submissions') }}">초기화</a>
+    <span class="muted small" style="align-self:center">{{ pg.total }}건</span>
+  </form>
+  <div class="table-wrap"><table>
+    <tr><th>#</th><th>학번</th><th>이름</th><th>문제</th><th>결과</th><th>통과</th><th>시간</th><th>코드 길이</th><th>제출 시각</th></tr>
+    {% for s in pg.items %}
+    <tr><td><a href="{{ url_for('student.submission_detail', sid=s.id) }}">{{ s.id }}</a></td>
+      <td><a href="{{ url_for('admin.student_detail', uid=s.user.id) }}">{{ s.user.student_no }}</a></td><td>{{ s.user.name }}</td>
+      <td><a href="{{ url_for('admin.submissions', problem=s.problem.number) }}">{{ s.problem.number }}. {{ s.problem.title }}</a></td>
+      <td>{{ status_badge(s.status) }}</td><td>{{ s.passed }}/{{ s.total }}</td><td>{{ '%.3f'|format(s.max_time or 0) }}초</td>
+      <td>{{ s.code|length }}자</td><td class="muted small">{{ s.created_at|dt }}</td></tr>
+    {% else %}<tr><td colspan="9" class="empty">제출이 없습니다.</td></tr>{% endfor %}
+  </table></div>
+  {{ pager(pg, 'admin.submissions') }}
+</div>
+{% endblock %}

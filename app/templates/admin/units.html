@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf %}
+{% block content %}
+<div class="card-head"><div><div class="muted small"><a href="{{ url_for('admin.problems') }}">문제 관리</a></div><h1 class="mt0" style="margin:0">단원 관리</h1></div></div>
+{% for u in units + [None] %}
+<details class="card" {{ 'open' if u is none and not units }}>
+  <summary style="cursor:pointer;font-weight:700">{% if u %}{{ u.order }}. {{ u.title }} <span class="muted small">· 문제 {{ u.problems|length }}개 · {{ u.summary }}</span>{% else %}+ 새 단원 추가{% endif %}</summary>
+  <form method="post" class="mt">{{ csrf() }}<input type="hidden" name="id" value="{{ u.id if u else '' }}">
+    <div class="form-row"><div class="field"><label>순서</label><input type="number" name="order" value="{{ u.order if u else (units|length + 1) }}"></div>
+      <div class="field" style="grid-column:span 2"><label>단원명</label><input type="text" name="title" value="{{ u.title if u else '' }}" required></div></div>
+    <div class="field"><label>한 줄 요약</label><input type="text" name="summary" value="{{ u.summary if u else '' }}"></div>
+    <div class="field"><label>단원 개념 정리 (마크다운)</label><textarea class="prose" name="concept" rows="10">{{ u.concept if u else '' }}</textarea></div>
+    <div class="btn-row"><button class="btn primary" name="action" value="save">저장</button>
+      {% if u %}<button class="btn danger" name="action" value="delete" data-confirm="단원을 삭제할까요?">삭제</button>{% endif %}</div>
+  </form>
+</details>
+{% endfor %}
+{% endblock %}

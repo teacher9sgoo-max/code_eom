@@ -1,0 +1,8 @@
+# 학생 코드 채점 전용 이미지. 네트워크가 차단된 내부망에서만 동작한다.
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    RUNNER_UID=65534 RUNNER_GID=65534 RUNNER_PYTHON=/usr/local/bin/python3
+WORKDIR /srv
+COPY judge ./judge
+EXPOSE 9000
+CMD ["python3", "/srv/judge/server.py"]

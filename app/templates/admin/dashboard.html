@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge, level_badge %}
+{% block content %}
+<div class="card-head"><h1 class="mt0" style="margin:0">대시보드</h1>
+  <div class="btn-row"><a class="btn" href="{{ url_for('admin.students') }}">학생 등록</a><a class="btn" href="{{ url_for('admin.problem_edit') }}">문제 추가</a>
+  <a class="btn {{ 'success' if ai_enabled }}" href="{{ url_for('admin.ai_settings') }}">AI 도우미: {{ ai_provider if ai_enabled else '꺼짐' }}</a></div></div>
+<div class="grid g4 mb">
+  <div class="card stat"><div class="label">등록 학생</div><div class="value">{{ n_students }}</div><div class="sub">최근 7일 활동 {{ active_7d }}명</div></div>
+  <div class="card stat"><div class="label">문제</div><div class="value">{{ n_published }}<span class="muted small"> / {{ n_problems }}</span></div><div class="sub">공개 / 전체</div></div>
+  <div class="card stat"><div class="label">오늘 제출</div><div class="value">{{ subs_today }}</div><div class="sub">정답률 {{ (ac_today*100/subs_today)|round|int if subs_today else 0 }}%</div></div>
+  <div class="card stat"><div class="label">오늘 AI 질문</div><div class="value">{{ ai_today }}</div><div class="sub"><a href="{{ url_for('admin.ai_logs') }}">질문 기록 보기</a></div></div>
+</div>
+<div class="grid g2">
+  <div class="card">
+    <div class="card-head"><h3>최근 14일 제출</h3><div class="legend"><span><i style="background:#c7d4fb"></i>전체</span><span><i style="background:var(--primary)"></i>정답</span></div></div>
+    <div class="bars">
+      {% for d in daily %}
+      <div class="col"><span class="val">{{ d.total or '' }}</span>
+        <div class="bar" style="height:{{ (d.total*130/daily_max)|round|int }}px"><div class="ac" style="height:{{ (d.ac*130/daily_max)|round|int }}px"></div></div>
+        <span class="lbl">{{ d.label }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <h3>채점 결과 분포</h3>
+    {% set total_sub = status_dist.values()|sum %}
+    {% if total_sub %}
+    <table>{% for st, n in status_dist|dictsort(by='value', reverse=true) %}
+      <tr><td style="width:120px">{{ status_badge(st) }}</td><td><div class="progress"><span style="width:{{ (n*100/total_sub)|round }}%"></span></div></td><td class="right" style="width:90px">{{ n }} ({{ (n*100/total_sub)|round|int }}%)</td></tr>
+    {% endfor %}</table>
+    {% else %}<div class="empty">아직 제출이 없습니다.</div>{% endif %}
+  </div>
+  <div class="card">
+    <h3>학생들이 어려워하는 문제</h3>
+    {% if hard_rows %}
+    <table><tr><th>문제</th><th>시도</th><th>해결</th><th>해결률</th></tr>
+      {% for r in hard_rows %}<tr><td><a href="{{ url_for('admin.submissions', problem=r.p.number) }}">{{ r.p.number }}. {{ r.p.title }}</a></td><td>{{ r.tried }}명</td><td>{{ r.solved }}명</td><td><strong>{{ r.rate }}%</strong></td></tr>{% endfor %}
+    </table>
+    {% else %}<div class="empty">3명 이상 시도한 문제가 생기면 표시됩니다.</div>{% endif %}
+  </div>
+  <div class="card">
+    <h3>해결 문제 수 상위 학생</h3>
+    {% if top_rows %}
+    <table>{% for r in top_rows %}<tr><td style="width:30px">{{ loop.index }}</td><td><a href="{{ url_for('admin.student_detail', uid=r.u.id) }}">{{ r.u.student_no }} {{ r.u.name }}</a></td><td class="right">{{ r.solved }}문제</td></tr>{% endfor %}</table>
+    {% else %}<div class="empty">아직 정답 제출이 없습니다.</div>{% endif %}
+  </div>
+</div>
+<div class="card">
+  <div class="card-head"><h3>최근 제출</h3><a class="small" href="{{ url_for('admin.submissions') }}">전체 보기</a></div>
+  <div class="table-wrap"><table>
+    <tr><th>#</th><th>학생</th><th>문제</th><th>결과</th><th>통과</th><th>시각</th></tr>
+    {% for s in recent %}<tr><td><a href="{{ url_for('student.submission_detail', sid=s.id) }}">{{ s.id }}</a></td><td>{{ s.user.student_no }} {{ s.user.name }}</td><td>{{ s.problem.number }}. {{ s.problem.title }}</td><td>{{ status_badge(s.status) }}</td><td>{{ s.passed }}/{{ s.total }}</td><td class="muted small">{{ s.created_at|dt }}</td></tr>
+    {% else %}<tr><td colspan="6" class="empty">제출이 없습니다.</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

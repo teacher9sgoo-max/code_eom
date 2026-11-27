@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf %}
+{% block content %}
+<h1>사이트 설정</h1>
+<div class="grid g2">
+  <form method="post" class="card">{{ csrf() }}
+    <h3>일반</h3>
+    <div class="field"><label>사이트 이름</label><input type="text" name="site_title" value="{{ s.site_title }}"></div>
+    <div class="field"><label>학생 홈 공지 (마크다운)</label><textarea class="prose" name="announcement" rows="4">{{ s.announcement }}</textarea></div>
+    <div class="field"><label>학생 초기 비밀번호</label><input type="text" name="default_password" value="{{ s.default_password }}" placeholder="비워 두면 학번이 초기 비밀번호">
+      <span class="muted small">신규 등록·비밀번호 초기화 때 적용됩니다. 학생은 첫 로그인 때 반드시 변경합니다.</span></div>
+    <h3 class="mt">학습 흐름</h3>
+    <label class="check"><input type="checkbox" name="require_quiz" value="1" {{ 'checked' if s.require_quiz=='1' }}> 퀴즈를 모두 맞혀야 코딩 문제 제출 가능</label>
+    <label class="check"><input type="checkbox" name="show_hidden_cases" value="1" {{ 'checked' if s.show_hidden_cases=='1' }}> 채점 결과에서 비공개 케이스의 입력·정답까지 공개</label>
+    <label class="check"><input type="checkbox" name="allow_custom_run" value="1" {{ 'checked' if s.allow_custom_run=='1' }}> 직접 입력값을 넣어 실행하는 기능 허용</label>
+    <button class="btn primary mt">저장</button>
+  </form>
+  <div>
+    <div class="card"><h3>채점 서버</h3>
+      <p>현재 모드: <strong>{{ judge_mode }}</strong></p>
+      {% if judge_mode != '격리 채점 서버' %}<div class="notice small">로컬 실행 모드는 테스트용입니다. 실제 수업에서는 docker compose로 실행해 학생 코드가 네트워크가 차단된 별도 컨테이너에서 실행되게 하세요.</div>{% endif %}
+    </div>
+    <div class="card"><h3>관리자 계정</h3>
+      <table>{% for a in admins %}<tr><td>{{ a.student_no }}</td><td>{{ a.name }}</td><td class="right">{% if a.id != current_user.id %}<form method="post" action="{{ url_for('admin.delete_admin', uid=a.id) }}">{{ csrf() }}<button class="btn sm danger" data-confirm="관리자를 삭제할까요?">삭제</button></form>{% else %}<span class="muted small">본인</span>{% endif %}</td></tr>{% endfor %}</table>
+      <form method="post" action="{{ url_for('admin.add_admin') }}" class="mt">{{ csrf() }}
+        <div class="form-row"><div class="field"><label>아이디</label><input type="text" name="admin_id" required></div><div class="field"><label>이름</label><input type="text" name="name"></div><div class="field"><label>비밀번호(8자 이상)</label><input type="password" name="password" required></div></div>
+        <button class="btn">관리자 추가</button></form>
+    </div>
+  </div>
+</div>
+{% endblock %}

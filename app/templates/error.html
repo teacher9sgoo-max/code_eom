@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card center" style="max-width:520px;margin:60px auto">
+  <h1>{{ code }}</h1><p class="muted">{{ message }}</p>
+  <a class="btn primary" href="{{ url_for('student.home') }}">처음으로</a>
+</div>
+{% endblock %}

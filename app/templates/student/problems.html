@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "macros.html" import level_badge %}
+{% block content %}
+<div class="card-head"><h1 class="mt0">문제 목록</h1></div>
+<form class="filters" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="번호 또는 제목 검색">
+  <select name="level"><option value="">전체 난이도</option>{% for i in range(1,6) %}<option value="{{ i }}" {{ 'selected' if level==i }}>Lv.{{ i }}</option>{% endfor %}</select>
+  <select name="status"><option value="">전체 상태</option><option value="new" {{ 'selected' if status=='new' }}>안 푼 문제</option><option value="tried" {{ 'selected' if status=='tried' }}>도전 중</option><option value="solved" {{ 'selected' if status=='solved' }}>해결</option></select>
+  <button class="btn">검색</button>
+  <span class="muted small" style="align-self:center"><span class="dot solved"></span> 해결 &nbsp; <span class="dot tried"></span> 도전 중 &nbsp; <span class="dot"></span> 안 품</span>
+</form>
+{% for g in groups %}
+<div class="unit-block card" style="padding:0">
+  <div class="unit-title" style="padding:14px 16px 6px">
+    <div><h2 class="mt0" style="margin:0">{{ g.unit.title }}</h2><div class="muted small">{{ g.unit.summary }}</div></div>
+    <span class="muted small">{{ g.solved }} / {{ g.rows|length }}</span>
+  </div>
+  <ul class="plist">
+  {% for it in g.rows %}
+    <li><a href="{{ url_for('student.problem', number=it.p.number) }}">
+      <span class="dot {{ it.state }}"></span>
+      <span class="num">{{ it.p.number }}</span>
+      <span>{{ it.p.title }}{% if not it.p.published %} <span class="badge st-PENDING">비공개</span>{% endif %}</span>
+      <span class="muted small">해결 {{ it.solvers }}명</span>
+      {{ level_badge(it.p.level) }}
+    </a></li>
+  {% endfor %}
+  </ul>
+</div>
+{% else %}
+<div class="card empty">조건에 맞는 문제가 없습니다.</div>
+{% endfor %}
+{% endblock %}

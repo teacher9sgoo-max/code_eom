@@ -1,0 +1,58 @@
+# 실행:  docker compose up -d --build
+# HTTPS(도메인 보유 시):  docker compose --profile https up -d --build
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      JUDGE_URL: http://judge:9000
+      TZ: Asia/Seoul
+    volumes:
+      - pyjudge_data:/data
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    networks: [default, judge_net]
+    depends_on: [judge]
+
+  judge:
+    build:
+      context: .
+      dockerfile: Dockerfile.judge
+    restart: unless-stopped
+    environment:
+      JUDGE_TOKEN: ${JUDGE_TOKEN}
+      JUDGE_WORKERS: ${JUDGE_WORKERS:-4}
+    networks: [judge_net]       # 인터넷과 차단된 내부망에만 연결
+    read_only: true             # 파일 시스템 읽기 전용
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, KILL]   # 학생 코드를 nobody 권한으로 낮춰 실행하기 위한 최소 권한
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 2
+
+  caddy:
+    image: caddy:2
+    profiles: [https]
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [web]
+
+networks:
+  judge_net:
+    internal: true
+
+volumes:
+  pyjudge_data:
+  caddy_data:

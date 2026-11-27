@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% from "macros.html" import pager %}
+{% block content %}
+<div class="card-head"><h1 class="mt0" style="margin:0">AI 질문 기록</h1><a class="btn" href="{{ url_for('admin.ai_settings') }}">AI 설정</a></div>
+<div class="card">{% set logs = pg.items %}{% include "admin/_ai_log_table.html" %}{{ pager(pg, 'admin.ai_logs') }}</div>
+{% endblock %}

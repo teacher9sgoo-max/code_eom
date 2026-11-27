@@ -1,0 +1,11 @@
+<div class="table-wrap"><table>
+  <tr><th>시각</th><th>학생</th><th>문제</th><th>유형</th><th>질문 / 답변</th><th>AI</th></tr>
+  {% for l in logs %}
+  <tr><td class="muted small" style="white-space:nowrap">{{ l.created_at|dt }}</td>
+    <td>{% if l.user %}{{ l.user.student_no }} {{ l.user.name }}{% endif %}</td>
+    <td>{{ l.problem.number if l.problem else '-' }}</td>
+    <td><span class="badge lv">{{ {'chat':'질문','quiz':'퀴즈 오답','submission':'제출 오답'}.get(l.kind, l.kind) }}</span></td>
+    <td><details><summary style="cursor:pointer">{{ l.question[:80] }}</summary><div class="md small {{ '' if l.ok else 'flash error' }}">{{ l.answer|md }}</div></details></td>
+    <td class="small">{{ l.provider }}{% if not l.ok %} <span class="badge st-WA">실패</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">기록이 없습니다.</td></tr>{% endfor %}
+</table></div>

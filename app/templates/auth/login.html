@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrap" style="margin:-24px -20px -60px">
+  <div class="card auth-card">
+    <div class="brand" style="justify-content:center;margin-bottom:10px"><span class="logo">Py</span></div>
+    <h1>{{ site_title }}</h1>
+    <p class="muted center mb">학번과 비밀번호로 로그인하세요.</p>
+    {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}{% endwith %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="sid">학번</label><input id="sid" type="text" name="student_no" autocomplete="username" required autofocus></div>
+      <div class="field"><label for="pw">비밀번호</label><input id="pw" type="password" name="password" autocomplete="current-password" required></div>
+      <label class="check"><input type="checkbox" name="remember" value="1"> 로그인 상태 유지</label>
+      <button class="btn primary mt" style="width:100%;padding:11px">로그인</button>
+    </form>
+    <p class="muted small center mt">처음 로그인하면 비밀번호를 새로 설정합니다. 비밀번호를 잊었다면 선생님께 초기화를 요청하세요.</p>
+  </div>
+</div>
+{% endblock %}

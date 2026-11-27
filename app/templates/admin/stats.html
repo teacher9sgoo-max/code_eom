@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "macros.html" import level_badge %}
+{% block content %}
+<div class="card-head"><h1 class="mt0" style="margin:0">학습 통계</h1><a class="btn" href="{{ url_for('admin.students_export') }}">학생별 진도 CSV</a></div>
+<div class="card">
+  <h3>학생 × 단원 진도표</h3>
+  {% if matrix %}
+  <div class="table-wrap"><table class="heat">
+    <tr><th>학번</th><th>이름</th>{% for u in units %}<th class="center" title="{{ u.title }}">{{ u.title }}</th>{% endfor %}<th class="center">합계</th></tr>
+    {% for r in matrix %}
+    <tr><td><a href="{{ url_for('admin.student_detail', uid=r.s.id) }}">{{ r.s.student_no }}</a></td><td>{{ r.s.name }}</td>
+      {% for c in r.cells %}<td class="cell" style="background:rgba(48,86,211,{{ (c.pct/100*0.75)|round(2) }});color:{{ '#fff' if c.pct>=60 else 'inherit' }}">{{ c.done }}/{{ c.total }}</td>{% endfor %}
+      <td class="center"><strong>{{ r.total }}</strong></td></tr>
+    {% endfor %}
+  </table></div>
+  {% else %}<div class="empty">등록된 학생이 없습니다.</div>{% endif %}
+</div>
+<div class="card">
+  <h3>문제별 통계</h3>
+  <div class="table-wrap"><table>
+    <tr><th>번호</th><th>제목</th><th>난이도</th><th>제출</th><th>정답 제출</th><th>시도 학생</th><th>해결 학생</th><th>해결률</th><th>퀴즈 정답률</th></tr>
+    {% for r in rows %}
+    <tr><td>{{ r.p.number }}</td><td><a href="{{ url_for('admin.submissions', problem=r.p.number) }}">{{ r.p.title }}</a></td><td>{{ level_badge(r.p.level) }}</td>
+      <td>{{ r.subs }}</td><td>{{ r.ac }}</td><td>{{ r.tried }}</td><td>{{ r.solved }}</td>
+      <td>{% if r.tried %}<strong>{{ (r.solved*100/r.tried)|round|int }}%</strong>{% else %}-{% endif %}</td>
+      <td>{{ (r.quiz_rate ~ '%') if r.quiz_rate is not none else '-' }} {% if r.quiz_n %}<span class="muted small">({{ r.quiz_n }}회)</span>{% endif %}</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}

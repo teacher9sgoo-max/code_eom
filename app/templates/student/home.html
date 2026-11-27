@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge %}
+{% block content %}
+<h1>{{ current_user.name }} 님의 학습 현황</h1>
+{% if announcement %}<div class="notice md">{{ announcement|md }}</div>{% endif %}
+<div class="grid g4 mb">
+  <div class="card stat"><div class="label">해결한 문제</div><div class="value">{{ solved }}<span class="muted small"> / {{ total }}</span></div>
+    <div class="progress mt"><span style="width:{{ (solved*100/total)|round if total else 0 }}%"></span></div></div>
+  <div class="card stat"><div class="label">도전 중인 문제</div><div class="value">{{ tried }}</div><div class="sub">제출했지만 아직 정답이 아닌 문제</div></div>
+  <div class="card stat"><div class="label">총 제출</div><div class="value">{{ sub_count }}</div><div class="sub">정답 제출 {{ ac_count }}회</div></div>
+  <div class="card stat"><div class="label">이어서 풀기</div>
+    {% if next_problem %}<div style="margin-top:8px"><a class="btn primary" href="{{ url_for('student.problem', number=next_problem.number) }}">{{ next_problem.number }}. {{ next_problem.title }}</a></div>
+    {% else %}<div class="value" style="font-size:1.2rem">모두 해결!</div>{% endif %}</div>
+</div>
+<div class="grid g2">
+  <div class="card">
+    <h2>단원별 진도</h2>
+    <table>
+      {% for s in unit_stats %}
+      <tr><td style="width:45%"><strong>{{ s.unit.title }}</strong><div class="muted small">{{ s.unit.summary }}</div></td>
+        <td><div class="progress"><span style="width:{{ (s.solved*100/s.total)|round }}%"></span></div></td>
+        <td class="right" style="width:70px">{{ s.solved }}/{{ s.total }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>최근 제출</h2><a href="{{ url_for('student.my_submissions') }}" class="small">전체 보기</a></div>
+    {% if recent %}
+    <table>
+      <tr><th>문제</th><th>결과</th><th>시간</th></tr>
+      {% for s in recent %}
+      <tr><td><a href="{{ url_for('student.problem', number=s.problem.number) }}">{{ s.problem.number }}. {{ s.problem.title }}</a></td>
+        <td><a href="{{ url_for('student.submission_detail', sid=s.id) }}">{{ status_badge(s.status) }}</a> <span class="muted small">{{ s.passed }}/{{ s.total }}</span></td>
+        <td class="muted small">{{ s.created_at|dt }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<div class="empty">아직 제출한 코드가 없습니다. 첫 문제부터 시작해 보세요.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

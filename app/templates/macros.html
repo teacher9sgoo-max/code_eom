@@ -1,0 +1,17 @@
+{% macro status_badge(st) -%}
+<span class="badge st-{{ st }}">{{ STATUS_LABELS.get(st, st) }}</span>
+{%- endmacro %}
+{% macro level_badge(lv) -%}
+<span class="badge lv lv-{{ lv }}">Lv.{{ lv }}</span>
+{%- endmacro %}
+{% macro pager(pg, endpoint) -%}
+{% if pg.pages > 1 %}
+<div class="pagination">
+  {% set args = request.args.to_dict() %}
+  {% if pg.has_prev %}{% set _ = args.update({'page': pg.prev_num}) %}<a class="btn sm" href="{{ url_for(endpoint, **args) }}">이전</a>{% endif %}
+  <span class="btn sm ghost">{{ pg.page }} / {{ pg.pages }}</span>
+  {% if pg.has_next %}{% set _ = args.update({'page': pg.next_num}) %}<a class="btn sm" href="{{ url_for(endpoint, **args) }}">다음</a>{% endif %}
+</div>
+{% endif %}
+{%- endmacro %}
+{% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{%- endmacro %}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{% block title %}{{ site_title }}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<header class="topbar"><div class="inner">
+  <a class="brand" href="{{ url_for('student.home') }}"><span class="logo">Py</span>{{ site_title }}</a>
+  <nav class="nav">
+  {% set ep = request.endpoint or '' %}
+  {% if current_user.is_admin %}
+    <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if ep=='admin.dashboard' }}">대시보드</a>
+    <a href="{{ url_for('admin.students') }}" class="{{ 'active' if ep.startswith('admin.student') }}">학생</a>
+    <a href="{{ url_for('admin.problems') }}" class="{{ 'active' if ep.startswith('admin.problem') or ep=='admin.units' }}">문제</a>
+    <a href="{{ url_for('admin.submissions') }}" class="{{ 'active' if ep.startswith('admin.submission') }}">제출</a>
+    <a href="{{ url_for('admin.stats') }}" class="{{ 'active' if ep=='admin.stats' }}">통계</a>
+    <a href="{{ url_for('admin.ai_settings') }}" class="{{ 'active' if ep.startswith('admin.ai') }}">AI 도우미</a>
+    <a href="{{ url_for('admin.settings') }}" class="{{ 'active' if ep=='admin.settings' }}">설정</a>
+    <a href="{{ url_for('student.problems') }}" class="{{ 'active' if ep.startswith('student.problem') }}">학생 화면</a>
+  {% else %}
+    <a href="{{ url_for('student.home') }}" class="{{ 'active' if ep=='student.home' }}">홈</a>
+    <a href="{{ url_for('student.problems') }}" class="{{ 'active' if ep.startswith('student.problem') }}">문제</a>
+    <a href="{{ url_for('student.my_submissions') }}" class="{{ 'active' if ep.startswith('student.submission') or ep=='student.my_submissions' }}">내 제출</a>
+  {% endif %}
+  </nav>
+  <div class="userbox">
+    <span>{{ current_user.student_no }} {{ current_user.name }}</span>
+    <a class="btn sm ghost" href="{{ url_for('auth.change_password') }}">비밀번호</a>
+    <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn sm">로그아웃</button></form>
+  </div>
+</div></header>
+{% endif %}
+<main class="container {% block container_class %}{% endblock %}">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, m in msgs %}<div class="flash {{ cat if cat in ['success','error','info'] else 'info' }}">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

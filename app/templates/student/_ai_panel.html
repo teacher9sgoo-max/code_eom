@@ -1,0 +1,17 @@
+<button class="btn primary ai-fab" id="ai-fab">AI 도우미에게 질문</button>
+<div class="ai-panel" id="ai-panel" aria-live="polite">
+  <div class="ai-head"><strong>AI 학습 도우미</strong><button class="btn sm ghost" id="ai-close">닫기</button></div>
+  <div class="ai-body" id="ai-body">
+    <div class="msg bot">무엇이든 물어보세요. 작성 중인 코드를 함께 보고 힌트를 드립니다. 정답 코드를 그대로 알려주지는 않아요.</div>
+  </div>
+  <div class="ai-quick">
+    <button class="btn sm" data-q="이 문제를 어떻게 시작하면 좋을지 단계별로 힌트를 주세요.">어떻게 시작하죠?</button>
+    <button class="btn sm" data-q="제 코드에서 잘못된 부분이 있는지 봐 주세요.">내 코드 봐 주세요</button>
+    <button class="btn sm" data-q="이 문제에 필요한 개념을 쉬운 예시로 설명해 주세요.">개념 설명</button>
+  </div>
+  <div class="ai-foot">
+    <textarea id="ai-input" placeholder="질문 입력 (Enter 전송, Shift+Enter 줄바꿈)"></textarea>
+    <button class="btn primary" id="ai-send">전송</button>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/ai.js') }}"></script>

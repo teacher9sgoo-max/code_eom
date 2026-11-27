@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge, csrf %}
+{% block content %}
+<div class="card-head">
+  <div><h1 class="mt0" style="margin:0">제출 #{{ sub.id }}</h1>
+  <div class="muted">{{ sub.user.student_no }} {{ sub.user.name }} · <a href="{{ url_for('student.problem', number=sub.problem.number) }}">{{ sub.problem.number }}. {{ sub.problem.title }}</a> · {{ sub.created_at|dt }}</div></div>
+  <div class="btn-row">
+    {% if current_user.is_admin %}<form method="post" action="{{ url_for('admin.submission_rejudge', sid=sub.id) }}">{{ csrf() }}<button class="btn">재채점</button></form>{% endif %}
+    <a class="btn primary" href="{{ url_for('student.problem', number=sub.problem.number) }}">문제로 돌아가기</a>
+  </div>
+</div>
+<div class="grid g2">
+  <div class="card"><h3>제출 코드</h3><pre><code>{{ sub.code }}</code></pre></div>
+  <div class="card" style="padding:0"><div id="result" class="result-box"></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const VIEW = {{ view|tojson }};
+const AI_ENABLED = {{ 'true' if ai_enabled else 'false' }};
+const PROBLEM_NUMBER = {{ sub.problem.number }};
+renderResult(document.getElementById('result'), VIEW, {ai: AI_ENABLED});
+if (!VIEW.done) pollSubmission(VIEW.id, v => renderResult(document.getElementById('result'), v, {ai: AI_ENABLED}));
+</script>
+{% if ai_enabled %}{% include "student/_ai_panel.html" %}{% endif %}
+{% endblock %}

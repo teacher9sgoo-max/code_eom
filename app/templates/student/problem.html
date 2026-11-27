@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "macros.html" import level_badge, status_badge %}
+{% block title %}{{ p.number }}. {{ p.title }} - {{ site_title }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/codemirror/codemirror.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/codemirror/material-darker.css') }}">
+{% endblock %}
+{% block content %}
+<div class="card-head">
+  <div>
+    <div class="muted small"><a href="{{ url_for('student.problems') }}">문제 목록</a> · {{ p.unit.title if p.unit else '' }}</div>
+    <h1 class="mt0" style="margin:2px 0 0">{{ p.number }}. {{ p.title }} {{ level_badge(p.level) }} {% if solved %}<span class="badge st-AC">해결</span>{% endif %}</h1>
+  </div>
+  <div class="btn-row">
+    {% if prev_p %}<a class="btn sm" href="{{ url_for('student.problem', number=prev_p.number) }}">← {{ prev_p.number }}</a>{% endif %}
+    {% if next_p %}<a class="btn sm" href="{{ url_for('student.problem', number=next_p.number) }}">{{ next_p.number }} →</a>{% endif %}
+    {% if current_user.is_admin %}<a class="btn sm" href="{{ url_for('admin.problem_edit', pid=p.id) }}">편집</a>{% endif %}
+  </div>
+</div>
+
+<div class="steps" role="tablist">
+  <button class="step" data-step="concept"><span class="n">1</span>개념</button>
+  <button class="step {{ 'done' if quiz_all_done and p.quizzes }}" data-step="quiz" id="step-quiz"><span class="n">2</span>퀴즈 {% if p.quizzes %}<span class="muted small" id="quiz-count">({{ quiz_state.values()|selectattr('correct')|list|length }}/{{ p.quizzes|length }})</span>{% endif %}</button>
+  <button class="step {{ 'done' if solved }}" data-step="code"><span class="n">3</span>코딩 문제</button>
+</div>
+
+<!-- 1. 개념 -->
+<section class="pane card" id="pane-concept">
+  <h2>개념 익히기</h2>
+  <div class="md">{{ p.concept|md if p.concept else '<p class="muted">이 문제에 등록된 개념 설명이 없습니다.</p>'|safe }}</div>
+  {% if p.unit and p.unit.concept %}
+  <details class="mt"><summary class="btn sm">‘{{ p.unit.title }}’ 단원 개념 전체 보기</summary><div class="md mt">{{ p.unit.concept|md }}</div></details>
+  {% endif %}
+  <div class="btn-row mt"><button class="btn primary" data-goto="{{ 'quiz' if p.quizzes else 'code' }}">{{ '퀴즈 풀기 →' if p.quizzes else '문제 풀기 →' }}</button></div>
+</section>
+
+<!-- 2. 퀴즈 -->
+<section class="pane card" id="pane-quiz">
+  <h2>개념 확인 퀴즈</h2>
+  {% if require_quiz %}<p class="muted small">퀴즈를 모두 맞혀야 코딩 문제를 제출할 수 있습니다.</p>{% endif %}
+  {% for q in p.quizzes %}
+  {% set st = quiz_state[q.id] %}
+  <div class="quiz {{ 'correct' if st.correct }}" data-quiz="{{ q.id }}" data-kind="{{ q.kind }}">
+    <div class="q" style="display:flex;gap:6px"><span style="padding-top:.5em">Q{{ loop.index }}.</span><div class="md" style="flex:1">{{ q.question|md }}</div></div>
+    {% if q.kind == 'choice' %}
+      {% for o in q.options %}
+      <label class="opt" data-idx="{{ loop.index0 }}"><input type="radio" name="q{{ q.id }}" value="{{ loop.index0 }}"> <span>{{ o }}</span></label>
+      {% endfor %}
+    {% else %}
+      <input type="text" class="short-answer" placeholder="정답 입력" style="max-width:360px">
+    {% endif %}
+    <div class="btn-row mt">
+      <button class="btn primary sm quiz-submit">정답 확인</button>
+      {% if st.correct %}<span class="badge st-AC">정답</span>{% endif %}
+    </div>
+    <div class="feedback-area"></div>
+  </div>
+  {% else %}<p class="muted">이 문제에는 퀴즈가 없습니다.</p>{% endfor %}
+  <div class="btn-row mt"><button class="btn primary" data-goto="code">문제 풀기 →</button></div>
+</section>
+
+<!-- 3. 코딩 -->
+<section class="pane" id="pane-code">
+  <div class="solve">
+    <div class="card">
+      <div class="md">{{ p.description|md }}</div>
+      <div class="section-label">입력</div><div class="md">{{ p.input_desc|md if p.input_desc else '<p class="muted">입력이 없습니다.</p>'|safe }}</div>
+      <div class="section-label">출력</div><div class="md">{{ p.output_desc|md }}</div>
+      {% for t in p.samples %}
+      <div class="sample mt">
+        <div><div class="section-label" style="margin:0">예제 입력 {{ loop.index }} <button class="btn sm ghost copy" data-copy="{{ t.input }}">복사</button></div><pre>{{ t.input }}</pre></div>
+        <div><div class="section-label" style="margin:0">예제 출력 {{ loop.index }}</div><pre>{{ t.output }}</pre></div>
+      </div>
+      {% endfor %}
+      {% if p.hint %}<details class="mt"><summary class="btn sm">힌트 보기</summary><div class="md mt">{{ p.hint|md }}</div></details>{% endif %}
+      <p class="muted small mt">시간 제한 {{ p.time_limit|round(1) }}초 · 메모리 제한 {{ p.memory_limit }}MB · 채점 케이스 {{ p.testcases|length }}개</p>
+      {% if my_subs %}
+      <div class="section-label">이 문제의 내 제출</div>
+      <table>{% for s in my_subs %}<tr><td><a href="{{ url_for('student.submission_detail', sid=s.id) }}">#{{ s.id }}</a></td><td>{{ status_badge(s.status) }}</td><td>{{ s.passed }}/{{ s.total }}</td><td class="muted small">{{ s.created_at|dt }}</td><td><button class="btn sm ghost load-code" data-sid="{{ s.id }}">코드 불러오기</button></td></tr>{% endfor %}</table>
+      {% endif %}
+    </div>
+    <div>
+      <div class="card editor-card">
+        <div class="editor-bar">
+          <strong>Python 3</strong>
+          <div class="btn-row">
+            <button class="btn sm ghost" id="btn-reset" title="코드 초기화">초기화</button>
+            {% if allow_custom_run %}<button class="btn sm" id="btn-run">▶ 실행 <span class="kbd">Ctrl+Enter</span></button>{% endif %}
+            <button class="btn sm primary" id="btn-submit">제출 <span class="kbd" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.5)">Ctrl+S</span></button>
+          </div>
+        </div>
+        <textarea id="code-fallback" spellcheck="false"></textarea>
+        {% if allow_custom_run %}
+        <div class="io-panel">
+          <div class="grid g2" style="gap:10px">
+            <div><label class="small">입력값 (직접 실행용)</label><textarea id="run-input" placeholder="실행할 때 넣을 입력">{{ p.samples[0].input if p.samples else '' }}</textarea></div>
+            <div><label class="small">실행 결과</label><pre id="run-output" style="height:84px;margin:0;background:#f6f8fb;color:var(--text);border:1px solid var(--line)"></pre></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="card" style="padding:0"><div id="result" class="result-box"><p class="muted" style="margin:0">코드를 제출하면 채점 결과가 여기에 표시됩니다.</p></div></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/codemirror/codemirror.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/codemirror/python.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/codemirror/matchbrackets.js') }}"></script>
+<script>
+const PROBLEM_NUMBER = {{ p.number }};
+const AI_ENABLED = {{ 'true' if ai_enabled else 'false' }};
+const INITIAL_CODE = {{ (last.code if last else '')|tojson }};
+const LAST_VIEW = {{ last_view|tojson }};
+const LAST_PENDING = {{ (last.id if last and last.status in ['PENDING','RUNNING'] else none)|tojson }};
+const HAS_QUIZ = {{ 'true' if p.quizzes else 'false' }};
+const QUIZ_DONE = {{ 'true' if quiz_all_done else 'false' }};
+const SOLVED = {{ 'true' if solved else 'false' }};
+</script>
+<script src="{{ url_for('static', filename='js/problem.js') }}"></script>
+{% if ai_enabled %}{% include "student/_ai_panel.html" %}{% endif %}
+{% endblock %}
